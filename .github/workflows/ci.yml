@@ -22,3 +22,28 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
+  protected-paths:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Block agent changes to protected paths
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if [[ "$HEAD_REF" != claude/* ]]; then
+            echo "Not an agent branch, nothing to check."
+            exit 0
+          fi
+          CHANGED=$(git diff --name-only "origin/$BASE_REF...HEAD")
+          BLOCKED=$(echo "$CHANGED" | grep -E '^(\.github/|CLAUDE\.md$|package-lock\.json$)' || true)
+          if [[ -n "$BLOCKED" ]]; then
+            echo "Agent branches may not change these files:"
+            echo "$BLOCKED"
+            exit 1
+          fi
+          echo "No protected paths touched."
