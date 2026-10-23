@@ -51,8 +51,13 @@ jobs:
 
       - name: Enforce the verdict
         env:
-          VERDICT: ${{ fromJSON(steps.review.outputs.structured_output).verdict }}
+          REVIEW_OUTPUT: ${{ steps.review.outputs.structured_output }}
         run: |
+          if [[ -z "$REVIEW_OUTPUT" ]]; then
+            echo "The AI reviewer produced no verdict (it was skipped or failed). See the step above."
+            exit 1
+          fi
+          VERDICT=$(jq -r '.verdict' <<< "$REVIEW_OUTPUT")
           echo "AI review verdict: $VERDICT"
           if [[ "$VERDICT" != "pass" ]]; then
             echo "The AI reviewer found blocking issues. See the PR comment."
