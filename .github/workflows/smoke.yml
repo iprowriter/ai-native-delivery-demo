@@ -1,0 +1,42 @@
+name: Scheduled smoke test
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Smoke test production
+        env:
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+        run: node scripts/smoke.mjs "$PRODUCTION_URL"
+
+      - name: Open an issue if production is broken
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          OPEN=$(gh issue list --repo "$GITHUB_REPOSITORY" --label production-down --state open --json number --jq length)
+          if [[ "$OPEN" -gt 0 ]]; then
+            echo "An open production-down issue already exists."
+            exit 0
+          fi
+          gh issue create \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Scheduled smoke test failed" \
+            --label "production-down" \
+            --body "The scheduled smoke test failed. Logs: $RUN_URL"

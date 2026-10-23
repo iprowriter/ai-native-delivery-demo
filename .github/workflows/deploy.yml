@@ -43,3 +43,21 @@ jobs:
         env:
           PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
         run: node scripts/smoke.mjs "$PRODUCTION_URL" "$GITHUB_SHA"
+
+  report-failure:
+    needs: deploy
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Open an issue for the failed deploy
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh issue create \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Deploy failed for commit ${GITHUB_SHA:0:7}" \
+            --label "deploy-failure" \
+            --body "The post-deploy smoke test failed. Logs: $RUN_URL"
