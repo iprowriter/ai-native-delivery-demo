@@ -30,4 +30,27 @@ describe("link shortener", () => {
         const res = await request(createApp()).get("/doesnotexist");
         expect(res.status).toBe(404);
     });
+
+    it("counts visits in link stats", async () => {
+        const app = createApp();
+        const created = await request(app)
+            .post("/links")
+            .send({url: "https://www.freecodecamp.org"});
+
+        const before = await request(app).get(`/links/${created.body.code}/stats`);
+        expect(before.status).toBe(200);
+        expect(before.body).toEqual({code: created.body.code, visits: 0});
+
+        await request(app).get(created.body.shortUrl);
+        await request(app).get(created.body.shortUrl);
+        await request(app).get(created.body.shortUrl);
+
+        const after = await request(app).get(`/links/${created.body.code}/stats`);
+        expect(after.body).toEqual({code: created.body.code, visits: 3});
+    });
+
+    it("returns 404 for stats of an unknown code", async () => {
+        const res = await request(createApp()).get("/links/doesnotexist/stats");
+        expect(res.status).toBe(404);
+    });
 })
