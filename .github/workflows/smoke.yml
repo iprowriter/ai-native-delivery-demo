@@ -11,6 +11,8 @@ permissions:
 
 jobs:
   smoke:
+    # Skip until a production URL is configured.
+    if: vars.PRODUCTION_URL != ''
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
