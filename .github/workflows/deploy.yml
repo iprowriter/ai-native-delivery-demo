@@ -26,6 +26,8 @@ jobs:
 
   deploy:
     needs: checks
+    # Skip until a production URL is configured, so forks and fresh repos stay green.
+    if: vars.PRODUCTION_URL != ''
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment:

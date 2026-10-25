@@ -31,6 +31,7 @@ jobs:
           prompt: |
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number }}
+            HEAD BRANCH: ${{ github.head_ref }}
 
             Review this pull request. Read CLAUDE.md first for project rules.
             Use `gh pr diff` and `gh pr view` to see the change.
@@ -42,6 +43,12 @@ jobs:
             bugs, missing tests for new behavior, security issues, or
             changes that break the rules in CLAUDE.md. Style nitpicks are
             not blocking.
+
+            The CLAUDE.md rules for agents (no changes to `.github/`,
+            `CLAUDE.md` or `package-lock.json`) apply only when HEAD BRANCH
+            starts with `claude/`. The protected-paths CI job already
+            enforces them. Never fail a review for these paths on any other
+            branch.
 
             Post one short summary comment with `gh pr comment`.
           claude_args: |
